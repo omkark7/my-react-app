@@ -1,0 +1,33 @@
+name: Deploy React App to AWS
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v1
+
+    - name: Build and push Docker image to ECR
+      run: |
+        docker build -t my-react-app .
+        docker tag my-react-app:latest <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/my-react-app:latest
+        docker push <AWS_ACCOUNT_ID>.dkr.ecr.<AWS_REGION>.amazonaws.com/my-react-app:latest
+
+    - name: Deploy to Elastic Beanstalk
+      run: |
+        eb init -p docker my-react-app --region <AWS_REGION>
+        eb use my-react-app-env
+        eb deploy
